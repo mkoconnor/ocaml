@@ -3178,15 +3178,18 @@ and is_nonexpansive_arg = function
 let maybe_expansive e = not (is_nonexpansive e)
 
 let annotate_recursive_bindings env valbinds =
-  let ids = let_bound_idents valbinds in
-  List.map
-    (fun {vb_pat; vb_expr; vb_rec_kind = _; vb_attributes; vb_loc} ->
-       match (Value_rec_check.is_valid_recursive_expression ids vb_expr) with
+  let kinds =
+    Value_rec_check.is_valid_recursive_bindings
+      (List.map (fun vb -> pat_bound_idents vb.vb_pat, vb.vb_expr) valbinds)
+  in
+  List.map2
+    (fun {vb_pat; vb_expr; vb_rec_kind = _; vb_attributes; vb_loc} kind ->
+       match kind with
        | None ->
          raise(Error(vb_expr.exp_loc, env, Illegal_letrec_expr))
        | Some vb_rec_kind ->
          { vb_pat; vb_expr; vb_rec_kind; vb_attributes; vb_loc})
-    valbinds
+    valbinds kinds
 
 let check_recursive_class_bindings env ids exprs =
   List.iter

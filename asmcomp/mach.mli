@@ -72,7 +72,9 @@ type operation =
 
 type instruction =
   { desc: instruction_desc;
-    next: instruction;
+    mutable next: instruction;
+    (* [next] is mutable only so that [dummy_instr] can be its own
+       successor. *)
     arg: Reg.t array;
     res: Reg.t array;
     dbg: Debuginfo.t;

@@ -1581,13 +1581,16 @@ module Make (T : TABLE) = struct
        be accessed (by a semantic action) if an epsilon production is reduced
        when the stack is empty. *)
 
-    let rec empty = {
+    (* The empty stack is its own successor through an immutable field,
+       which [let rec] does not allow, so tie the knot by mutation. *)
+    let empty = Sys.opaque_identity {
       state = s;                          (* dummy *)
       semv = T.error_value;               (* dummy *)
       startp = initial;                   (* dummy *)
       endp = initial;
-      next = empty;
+      next = Obj.magic ();
     } in
+    Obj.set_field (Obj.repr empty) 4 (Obj.repr empty);
 
     (* Build an initial environment. *)
 

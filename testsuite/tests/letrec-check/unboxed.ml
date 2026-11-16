@@ -2,11 +2,11 @@
  expect;
 *)
 
-type r = R of r list [@@unboxed]
-let rec a = R [a];;
+type r = R of r array [@@unboxed]
+let rec a = R [| a |];;
 [%%expect{|
-type r = R of r list [@@unboxed]
-val a : r = R [<cycle>]
+type r = R of r array [@@unboxed]
+val a : r = R [|<cycle>|]
 |}];;
 
 
@@ -32,7 +32,7 @@ Error: This kind of expression is not allowed as right-hand side of "let rec"
 
 (* This test is not allowed if 'a' is unboxed, but should be accepted
    as written *)
-type a = {a: b}
+type a = {mutable a: b}
 and b = X of a | Y
 
 let rec a =
@@ -42,7 +42,7 @@ let rec a =
      else
        Y)};;
 [%%expect{|
-type a = { a : b; }
+type a = { mutable a : b; }
 and b = X of a | Y
 val a : a = {a = X <cycle>}
 |}];;
@@ -71,38 +71,38 @@ Error: This kind of expression is not allowed as right-hand side of "let rec"
 (* This test is not allowed if 'c' is unboxed, but should be accepted
    as written *)
 type d = D of e
-and e = V of d | W;;
+and e = V of { mutable d : d } | W;;
 [%%expect{|
 type d = D of e
-and e = V of d | W
+and e = V of { mutable d : d; } | W
 |}];;
 
 let rec d =
   D
     (if Sys.opaque_identity true then
-       V d
+       V { d }
      else
        W);;
 [%%expect{|
-val d : d = D (V <cycle>)
+val d : d = D (V {d = <cycle>})
 |}];;
 
 type d = D of e [@@unboxed]
-and e = V of d | W;;
+and e = V of { mutable d : d } | W;;
 
 let rec d =
   D
     (if Sys.opaque_identity true then
-       V d
+       V { d }
      else
        W);;
 [%%expect{|
 type d = D of e [@@unboxed]
-and e = V of d | W
+and e = V of { mutable d : d; } | W
 Lines 5-9, characters 2-9:
 5 | ..D
 6 |     (if Sys.opaque_identity true then
-7 |        V d
+7 |        V { d }
 8 |      else
 9 |        W)..
 Error: This kind of expression is not allowed as right-hand side of "let rec"

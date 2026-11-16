@@ -111,10 +111,14 @@ let lowest_level = Ident.lowest_scope
    the only function returning the contents of a pool is [with_new_pool],
    so that the initial pool can be added to, but never read from. *)
 
-type pool = {level: int; mutable pool: transient_expr list; next: pool}
+type pool =
+  { level: int;
+    mutable pool: transient_expr list;
+    mutable next: pool [@warning "-unused-field"] }
 (* To avoid an indirection we choose to add a dummy level at the end of
    the list. It will never be accessed, as [pool_of_level] is always called
-   with [level >= 0]. *)
+   with [level >= 0]. [next] is mutable only so that [dummy] can be its own
+   successor. *)
 let rec dummy = {level = max_int; pool = []; next = dummy}
 let pool_stack = s_table (fun () -> {level = 0; pool = []; next = dummy}) ()
 
